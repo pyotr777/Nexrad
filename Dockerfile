@@ -67,4 +67,4 @@ WORKDIR /conda/
 RUN python test_pyart.py
 
 # Install Jupyter
-RUN conda install jupyter -y --quiet && mkdir /opt/notebooks
+# RUN conda install jupyter -y --quiet && mkdir /opt/notebooks

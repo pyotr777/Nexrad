@@ -20,7 +20,7 @@
 
 # In[1]:
 
-get_ipython().magic(u'matplotlib inline')
+#get_ipython().magic(u'matplotlib inline')
 
 import matplotlib.pyplot as plt
 import numpy.ma as ma
