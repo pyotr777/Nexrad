@@ -1,7 +1,10 @@
+# Copyright (c) Jupyter Development Team.
 # Distributed under the terms of the Modified BSD License.
-FROM nexrad:latest
 
-MAINTAINER Peter Bryzgalov
+# Debian Jessie image released 2016 May 03.
+FROM debian@sha256:32a225e412babcd54c0ea777846183c61003d125278882873fb2bc97f9057c51
+
+MAINTAINER Jupyter Project <jupyter@googlegroups.com>
 
 USER root
 
@@ -30,7 +33,7 @@ RUN wget --quiet https://github.com/krallin/tini/releases/download/v0.10.0/tini 
 ENV CONDA_DIR /opt/conda
 ENV PATH $CONDA_DIR/bin:$PATH
 ENV SHELL /bin/bash
-ENV NB_USER ubuntu
+ENV NB_USER jovyan
 ENV NB_UID 1000
 ENV HOME /home/$NB_USER
 ENV LC_ALL en_US.UTF-8
@@ -42,7 +45,7 @@ RUN useradd -m -s /bin/bash -N -u $NB_UID $NB_USER && \
     mkdir -p $CONDA_DIR && \
     chown $NB_USER $CONDA_DIR
 
-#USER $NB_USER
+USER $NB_USER
 
 # Setup jovyan home directory
 RUN mkdir /home/$NB_USER/work && \
@@ -51,16 +54,16 @@ RUN mkdir /home/$NB_USER/work && \
     echo "cacert=/etc/ssl/certs/ca-certificates.crt" > /home/$NB_USER/.curlrc
 
 # Install conda as jovyan
-#RUN cd /tmp && \
-#    mkdir -p $CONDA_DIR && \
-#    wget --quiet https://repo.continuum.io/miniconda/Miniconda3-4.1.11-Linux-x86_64.sh && \
-#    echo "efd6a9362fc6b4085f599a881d20e57de628da8c1a898c08ec82874f3bad41bf *Miniconda3-4.1.11-Linux-x86_64.sh" | #sha256sum -c - && \
-#    /bin/bash Miniconda3-4.1.11-Linux-x86_64.sh -f -b -p $CONDA_DIR && \
-#    rm Miniconda3-4.1.11-Linux-x86_64.sh && \
-#    $CONDA_DIR/bin/conda install --quiet --yes conda==4.1.11 && \
-#    $CONDA_DIR/bin/conda config --system --add channels conda-forge && \
-#    $CONDA_DIR/bin/conda config --system --set auto_update_conda false && \
-#    conda clean -tipsy
+RUN cd /tmp && \
+    mkdir -p $CONDA_DIR && \
+    wget --quiet https://repo.continuum.io/miniconda/Miniconda3-4.1.11-Linux-x86_64.sh && \
+    echo "efd6a9362fc6b4085f599a881d20e57de628da8c1a898c08ec82874f3bad41bf *Miniconda3-4.1.11-Linux-x86_64.sh" | sha256sum -c - && \
+    /bin/bash Miniconda3-4.1.11-Linux-x86_64.sh -f -b -p $CONDA_DIR && \
+    rm Miniconda3-4.1.11-Linux-x86_64.sh && \
+    $CONDA_DIR/bin/conda install --quiet --yes conda==4.1.11 && \
+    $CONDA_DIR/bin/conda config --system --add channels conda-forge && \
+    $CONDA_DIR/bin/conda config --system --set auto_update_conda false && \
+    conda clean -tipsy
 
 # Temporary workaround for https://github.com/jupyter/docker-stacks/issues/210
 # Stick with jpeg 8 to avoid problems with R packages
@@ -84,9 +87,11 @@ ENTRYPOINT ["tini", "--"]
 CMD ["start-notebook.sh"]
 
 # Add local files as late as possible to avoid cache busting
-COPY docker-stacks/base-notebook/start.sh /usr/local/bin/
-COPY docker-stacks/base-notebook/start-notebook.sh /usr/local/bin/
-COPY docker-stacks/base-notebook/start-singleuser.sh /usr/local/bin/
-COPY docker-stacks/base-notebook/jupyter_notebook_config.py /home/$NB_USER/.jupyter/
+COPY start.sh /usr/local/bin/
+COPY start-notebook.sh /usr/local/bin/
+COPY start-singleuser.sh /usr/local/bin/
+COPY jupyter_notebook_config.py /home/$NB_USER/.jupyter/
 RUN chown -R $NB_USER:users /home/$NB_USER/.jupyter
 
+# Switch back to jovyan to avoid accidental container runs as root
+USER $NB_USER
